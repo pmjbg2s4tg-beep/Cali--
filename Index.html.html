@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cali Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cali Tracker">
+<meta name="theme-color" content="#0a0a0a">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #c8f542;
+    --accent2: #42f5a1;
+    --text: #f0f0f0;
+    --muted: #666;
+    --red: #ff4d4d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 calc(80px + env(safe-area-inset-bottom));
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  .header-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* DAY TABS */
+  .tabs-wrap {
+    overflow-x: auto;
+    padding: 16px 20px 0;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    width: max-content;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .tab.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,245,66,0.08);
+  }
+
+  .tab.done-day::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--accent2);
+    color: #000;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .tab.rest-tab {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* DAY HEADER */
+  .day-header {
+    padding: 24px 20px 12px;
+  }
+
+  .day-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .day-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .day-progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 16px 20px 0;
+    overflow: hidden;
+  }
+
+  .day-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .day-progress-text {
+    padding: 8px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* EXERCISE CARDS */
+  .exercises {
+    padding: 8px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .exercise-card.completed {
+    border-color: rgba(200,245,66,0.3);
+    background: rgba(200,245,66,0.04);
+  }
+
+  .exercise-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+
+  .ex-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 20px;
+  }
+
+  .ex-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .exercise-card.completed .ex-name {
+    color: var(--accent);
+  }
+
+  .ex-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    font-size: 12px;
+  }
+
+  .exercise-card.completed .ex-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .sets-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 14px 48px;
+  }
+
+  .set-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .set-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .set-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .set-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    width: 100%;
+    padding: 2px 0;
+    outline: none;
+    text-align: center;
+  }
+
+  .set-input:focus {
+    border-bottom-color: var(--accent);
+  }
+
+  .set-unit {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* REST DAY */
+  .rest-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .rest-icon {
+    font-size: 64px;
+    line-height: 1;
+  }
+
+  .rest-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 3px;
+    color: var(--muted);
+  }
+
+  .rest-sub {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 240px;
+    line-height: 1.6;
+  }
+
+  /* MILESTONE BANNER */
+  .milestone-banner {
+    margin: 0 20px 12px;
+    background: rgba(200,245,66,0.08);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .milestone-icon { font-size: 20px; flex-shrink: 0; }
+
+  .milestone-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--accent);
+  }
+
+  .milestone-text strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  /* NOTES INPUT */
+  .notes-section {
+    margin: 0 20px 20px;
+  }
+
+  .notes-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .notes-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 12px 14px;
+    resize: none;
+    outline: none;
+    min-height: 72px;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+
+  .notes-input:focus {
+    border-color: var(--muted);
+  }
+
+  /* COMPLETE BUTTON */
+  .complete-btn {
+    margin: 0 20px 20px;
+    width: calc(100% - 40px);
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .complete-btn:active { transform: scale(0.98); }
+  .complete-btn:disabled { opacity: 0.4; cursor: default; }
+  .complete-btn.done {
+    background: var(--surface2);
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+  }
+
+  /* WEEKLY OVERVIEW */
+  .week-overview {
+    margin: 0 20px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .overview-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .overview-cell {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  .overview-cell.active-cell {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .overview-cell.completed-cell {
+    background: rgba(200,245,66,0.15);
+    border-color: rgba(200,245,66,0.4);
+  }
+
+  .overview-cell .cell-day { font-size: 14px; font-family: 'Bebas Neue', sans-serif; }
+  .overview-cell .cell-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
+  .overview-cell.completed-cell .cell-dot { background: var(--accent); }
+  .overview-cell.active-cell .cell-dot { background: var(--accent); }
+
+  /* RESTART BUTTON */
+  .restart-btn {
+    margin-top: 8px;
+    padding: 12px 28px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .restart-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* RESET MODAL */
+  .reset-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .reset-modal.open { display: flex; }
+
+  .reset-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    max-width: 320px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .reset-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--red);
+  }
+
+  .reset-sub {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .reset-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .reset-cancel {
+    flex: 1;
+    padding: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  .reset-confirm {
+    flex: 1;
+    padding: 12px;
+    background: var(--red);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  /* CONFETTI */
+  .confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    animation: fall linear forwards;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">CALI TRACKER</div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div id="app"></div>
+
+<div class="confetti-container" id="confetti"></div>
+
+<script>
+const DAYS = [
+  {
+    name: "Front Lever + V-sit",
+    tag: "HOLDS",
+    exercises: [
+      "Advanced tuck front lever hold",
+      "Tuck front lever hold",
+      "Scapular tuck FL pulls",
+      "Floor V-sit attempts",
+      "One-leg V-sit holds",
+      "Reverse planche leans",
+      "Seated pike stretch"
+    ]
+  },
+  {
+    name: "Front Lever + V-sit",
+    tag: "PULLS",
+    exercises: [
+      "Advanced tuck FL pull-ups",
+      "Tuck FL pull-ups",
+      "Australian pull-ups",
+      "Chin-ups",
+      "V-sit toe taps",
+      "L-sit to high compression lifts",
+      "Seated pike stretch"
+    ]
+  },
+  {
+    name: "Upper Body",
+    tag: "STRENGTH",
+    exercises: [
+      "Pull-ups",
+      "Chin-ups",
+      "Australian pull-ups",
+      "Wide Australian pull-ups",
+      "Dips",
+      "Pike push-ups",
+      "Diamond push-ups",
+      "Wide push-ups",
+      "Handstand hold"
+    ]
+  },
+  {
+    name: "Front Lever + V-sit",
+    tag: "RAISES",
+    exercises: [
+      "Advanced tuck raises",
+      "Tuck raises",
+      "Advanced tuck FL negatives",
+      "Scapular tuck FL pulls",
+      "Floor V-sit attempts",
+      "Advanced seated pike raises",
+      "Seated pike stretch"
+    ]
+  },
+  {
+    name: "Abs",
+    tag: "CORE",
+    exercises: [
+      "Hanging leg raises",
+      "Knees-to-bar",
+      "Hollow body hold",
+      "L-sit hold",
+      "Windshield wipers",
+      "V-ups"
+    ]
+  },
+  {
+    name: "Lower Body",
+    tag: "LEGS",
+    exercises: [
+      "Pistol squats",
+      "Bulgarian split squats",
+      "Slow lunges",
+      "Cossack squats",
+      "Single-leg calf raises",
+      "Wall sit"
+    ]
+  },
+  { name: "Rest", tag: "REST", exercises: [] }
+];
+
+// State
+let state = loadState();
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('cali-tracker-v1');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {
+    activeDay: 0,
+    days: DAYS.map(d => ({
+      completed: false,
+      exercises: d.exercises.map(() => ({
+        checked: false,
+        sets: [{ val: '' }, { val: '' }]
+      })),
+      notes: ''
+    }))
+  };
+}
+
+function saveState() {
+  try { localStorage.setItem('cali-tracker-v1', JSON.stringify(state)); } catch(e) {}
+}
+
+// Date display
+function updateDate() {
+  const d = new Date();
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  document.getElementById('headerDate').innerHTML =
+    d.toLocaleDateString('en-US', opts).toUpperCase() + '<br><span style="color:#444;font-size:10px">WEEK TRACKER</span>';
+}
+
+// Tabs
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  DAYS.forEach((day, i) => {
+    const t = document.createElement('div');
+    t.className = 'tab' +
+      (i === state.activeDay ? ' active' : '') +
+      (state.days[i].completed ? ' done-day' : '') +
+      (day.tag === 'REST' ? ' rest-tab' : '');
+    t.innerHTML = `<span style="display:block;font-size:9px;opacity:.6">D${i+1}</span>${day.tag}`;
+    t.onclick = () => { if (day.tag !== 'REST') { state.activeDay = i; saveState(); render(); } else { state.activeDay = i; render(); } };
+    tabs.appendChild(t);
+  });
+}
+
+// Progress
+function getDayProgress(dayIdx) {
+  const d = state.days[dayIdx];
+  const total = DAYS[dayIdx].exercises.length;
+  if (!total) return 1;
+  const done = d.exercises.filter(e => e.checked).length;
+  return done / total;
+}
+
+// Main render
+function render() {
+  renderTabs();
+  renderApp();
+}
+
+function renderApp() {
+  const app = document.getElementById('app');
+  const di = state.activeDay;
+  const day = DAYS[di];
+
+  if (day.tag === 'REST') {
+    app.innerHTML = `
+      <div class="rest-screen">
+        <div class="rest-icon">😴</div>
+        <div class="rest-title">REST DAY</div>
+        <div class="rest-sub">Recovery is when you grow. Sleep, eat well, and come back stronger.</div>
+        <button class="restart-btn" onclick="confirmRestart()">↩ RESTART WEEK</button>
+      </div>
+      <div class="reset-modal" id="resetModal">
+        <div class="reset-box">
+          <div class="reset-title">RESTART WEEK?</div>
+          <div class="reset-sub">This will clear all sets, reps, and completion data for every day. This can't be undone.</div>
+          <div class="reset-actions">
+            <button class="reset-cancel" onclick="closeRestart()">CANCEL</button>
+            <button class="reset-confirm" onclick="doRestart()">YES, RESET</button>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const ds = state.days[di];
+  const progress = getDayProgress(di);
+  const pct = Math.round(progress * 100);
+  const allDone = ds.exercises.every(e => e.checked);
+
+  let html = `
+    <div class="day-header">
+      <div class="day-label">Day ${di+1} · ${day.tag}</div>
+      <div class="day-name">${day.name}</div>
+    </div>
+    <div class="day-progress-bar">
+      <div class="day-progress-fill" style="width:${pct}%"></div>
+    </div>
+    <div class="day-progress-text">${ds.exercises.filter(e=>e.checked).length} / ${day.exercises.length} exercises done</div>
+  `;
+
+  // Milestone banner
+  html += `<div class="milestone-banner">
+    <div class="milestone-icon">🎯</div>
+    <div class="milestone-text">
+      <strong>Progression Target</strong>
+      Upgrade plan when you hit <strong>8–10s Advanced Tuck FL</strong> or <strong>5–8s Half V-sit</strong> consistently as a good workout.
+    </div>
+  </div>`;
+
+  // Exercises
+  html += `<div class="exercises">`;
+  day.exercises.forEach((name, ei) => {
+    const ex = ds.exercises[ei];
+    const isComp = ex.checked;
+    html += `
+      <div class="exercise-card${isComp ? ' completed' : ''}" id="ex-${ei}">
+        <div class="exercise-header" onclick="toggleExercise(${di}, ${ei})">
+          <div class="ex-num">${String(ei+1).padStart(2,'0')}</div>
+          <div class="ex-name">${name}</div>
+          <div class="ex-check">${isComp ? '✓' : ''}</div>
+        </div>
+        <div class="sets-row">
+          ${ex.sets.map((set, si) => `
+            <div class="set-block">
+              <div class="set-label">SET ${si+1}</div>
+              <div class="set-input-row">
+                <input
+                  class="set-input"
+                  type="number"
+                  inputmode="numeric"
+                  placeholder="—"
+                  value="${set.val}"
+                  oninput="updateSet(${di},${ei},${si},this.value)"
+                />
+                <div class="set-unit">s/reps</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  });
+  html += `</div>`;
+
+  // Notes
+  html += `
+    <div class="notes-section">
+      <div class="notes-label">Session Notes</div>
+      <textarea class="notes-input" placeholder="How did it feel? Any PRs?" oninput="updateNotes(${di},this.value)">${ds.notes || ''}</textarea>
+    </div>
+  `;
+
+  // Weekly overview
+  html += `
+    <div class="week-overview">
+      <div class="overview-title">This Week</div>
+      <div class="overview-grid">
+        ${DAYS.map((d, i) => `
+          <div class="overview-cell${i===di?' active-cell':''}${state.days[i].completed?' completed-cell':''}" onclick="switchDay(${i})">
+            <div class="cell-day">D${i+1}</div>
+            <div class="cell-dot"></div>
+            <div style="font-size:8px">${d.tag}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Complete button
+  if (ds.completed) {
+    html += `<button class="complete-btn done" disabled>✓ DAY ${di+1} COMPLETE</button>`;
+  } else {
+    html += `<button class="complete-btn" onclick="completeDay(${di})" ${allDone ? '' : 'style="opacity:0.6"'}>
+      ${allDone ? '🔥 COMPLETE DAY ' + (di+1) : 'MARK DAY ' + (di+1) + ' COMPLETE'}
+    </button>`;
+  }
+
+  app.innerHTML = html;
+}
+
+function toggleExercise(di, ei) {
+  state.days[di].exercises[ei].checked = !state.days[di].exercises[ei].checked;
+  saveState();
+  render();
+}
+
+function updateSet(di, ei, si, val) {
+  state.days[di].exercises[ei].sets[si].val = val;
+  saveState();
+}
+
+function updateNotes(di, val) {
+  state.days[di].notes = val;
+  saveState();
+}
+
+function completeDay(di) {
+  state.days[di].completed = true;
+  saveState();
+  launchConfetti();
+  render();
+}
+
+function switchDay(i) {
+  state.activeDay = i;
+  saveState();
+  render();
+}
+
+function confirmRestart() {
+  document.getElementById('resetModal').classList.add('open');
+}
+
+function closeRestart() {
+  document.getElementById('resetModal').classList.remove('open');
+}
+
+function doRestart() {
+  state = {
+    activeDay: 0,
+    days: DAYS.map(d => ({
+      completed: false,
+      exercises: d.exercises.map(() => ({
+        checked: false,
+        sets: [{ val: '' }, { val: '' }]
+      })),
+      notes: ''
+    }))
+  };
+  saveState();
+  render();
+}
+
+function launchConfetti() {
+  const c = document.getElementById('confetti');
+  c.innerHTML = '';
+  const colors = ['#c8f542','#42f5a1','#ffffff','#ffdd57','#ff4d4d'];
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random()*100}%;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius: ${Math.random()>0.5?'50%':'2px'};
+      animation-duration: ${1.2+Math.random()*1.5}s;
+      animation-delay: ${Math.random()*0.5}s;
+    `;
+    c.appendChild(el);
+  }
+  setTimeout(() => c.innerHTML = '', 3000);
+}
+
+// Init
+updateDate();
+render();
+</script>
+</body>
+</html>
